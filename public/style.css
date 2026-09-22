@@ -109,6 +109,18 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    background: #222;
+    color: white;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #444;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 #formMessage {
@@ -140,6 +152,7 @@ button {
 
 .delete-btn {
     background: transparent;
+    color: #555;
     border: none;
     font-size: 22px;
     cursor: pointer;
@@ -155,4 +168,27 @@ button {
     .management {
         grid-template-columns: 1fr;
     }
+}
+/* Trip status colors */
+
+.trip-status {
+    font-weight: 600;
+}
+
+.trip-status.planned {
+    background: #fff7ed;
+    color: #9a3412;
+    border-color: #fed7aa;
+}
+
+.trip-status.completed {
+    background: #f0fdf4;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.trip-status.cancelled {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
 }

@@ -226,6 +226,7 @@ async function loadTrips() {
 
                 <td>
                     <select
+                        class="trip-status ${trip.status}"
                         onchange="updateTripStatus(${id}, this.value)"
                     >
                         <option
@@ -526,6 +527,10 @@ tripForm.addEventListener(
             document.getElementById(
                 "formMessage"
             );
+        const submitButton =
+            tripForm.querySelector(
+                'button[type="submit"]'
+             );
 
 
         const trip = {
@@ -592,6 +597,8 @@ tripForm.addEventListener(
             message.textContent =
                 "Calculating route and saving trip...";
 
+        submitButton.disabled = true;
+        submitButton.textContent = "Calculating...";
 
             const response =
                 await fetch("/api/trips", {
@@ -630,6 +637,9 @@ tripForm.addEventListener(
         } catch (error) {
             message.textContent =
                 `Error: ${error.message}`;
+        }  finally {
+                submitButton.disabled = false;
+                submitButton.textContent = "Add Trip";
         }
     }
 );
