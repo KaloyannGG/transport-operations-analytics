@@ -1,3 +1,4 @@
+// Helper used before adding text inside table HTML.
 function escapeHtml(value) {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -7,7 +8,7 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-
+// Loads the main dashboard totals.
 async function loadSummary() {
     try {
         const response =
@@ -42,7 +43,7 @@ async function loadSummary() {
     }
 }
 
-
+// Loads driver performance data.
 async function loadDrivers() {
     try {
         const response =
@@ -104,7 +105,7 @@ async function loadDrivers() {
     }
 }
 
-
+// Loads vehicle performance data.
 async function loadVehicles() {
     try {
         const response =
@@ -172,7 +173,7 @@ async function loadVehicles() {
     }
 }
 
-
+// Loads all trips and builds the trips table.
 async function loadTrips() {
     try {
         const response =
@@ -283,7 +284,7 @@ async function loadTrips() {
     }
 }
 
-
+// Loads drivers and vehicles for the Add Trip dropdowns.
 async function loadFormOptions() {
     try {
         const driversResponse =
@@ -347,10 +348,9 @@ async function loadFormOptions() {
     }
 }
 
-
+// Add Driver form.
 const driverForm =
     document.getElementById("driverForm");
-
 
 driverForm.addEventListener(
     "submit",
@@ -426,10 +426,9 @@ driverForm.addEventListener(
     }
 );
 
-
+// Add Vehicle form.
 const vehicleForm =
     document.getElementById("vehicleForm");
-
 
 vehicleForm.addEventListener(
     "submit",
@@ -512,10 +511,10 @@ vehicleForm.addEventListener(
     }
 );
 
-
+// Add Trip form.
+// Distance and fuel cost are calculated by the backend.
 const tripForm =
     document.getElementById("tripForm");
-
 
 tripForm.addEventListener(
     "submit",
@@ -635,7 +634,7 @@ tripForm.addEventListener(
     }
 );
 
-
+// Updates only the trip status.
 async function updateTripStatus(id, status) {
     try {
         const response =
@@ -682,7 +681,7 @@ async function updateTripStatus(id, status) {
     }
 }
 
-
+// Deletes a trip after confirmation.
 async function deleteTrip(id) {
     if (!confirm("Delete this trip?")) {
         return;
@@ -720,7 +719,7 @@ async function deleteTrip(id) {
     }
 }
 
-
+// Driver cannot be deleted if it is already used in a trip.
 async function deleteDriver(id) {
     if (!confirm("Delete this driver?")) {
         return;
@@ -758,7 +757,7 @@ async function deleteDriver(id) {
     }
 }
 
-
+// Vehicle cannot be deleted if it is already used in a trip.
 async function deleteVehicle(id) {
     if (!confirm("Delete this vehicle?")) {
         return;
@@ -796,7 +795,7 @@ async function deleteVehicle(id) {
     }
 }
 
-
+// Reloads the dashboard after a change.
 async function refreshDashboard() {
     await loadSummary();
     await loadDrivers();
@@ -804,6 +803,5 @@ async function refreshDashboard() {
     await loadTrips();
     await loadFormOptions();
 }
-
 
 refreshDashboard();
