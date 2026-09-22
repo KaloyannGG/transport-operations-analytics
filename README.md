@@ -14,6 +14,8 @@ The idea is a simple internal tool for a transport company. It keeps information
 - Revenue, costs and profit tracking
 - Planned, Completed and Cancelled trip statuses
 - Driver and vehicle performance overview
+- Input validation for drivers, vehicles and trips
+- Duplicate vehicle registration protection
 - PostgreSQL database storage
 
 The financial dashboard includes completed trips only.
@@ -35,9 +37,9 @@ The financial dashboard includes completed trips only.
 
 When a trip is added, the app gets the coordinates for the origin and destination using Open-Meteo.
 
-The coordinates are sent to openrouteservice to get the route distance and estimated travel time.
+The coordinates are then sent to openrouteservice to get the route distance and estimated travel time.
 
-The app then reads the selected vehicle's average fuel consumption from PostgreSQL and calculates the estimated fuel cost based on the distance and fuel price.
+The app reads the selected vehicle's average fuel consumption from PostgreSQL and calculates the estimated fuel cost based on the distance and fuel price.
 
 The trip is saved in PostgreSQL and the dashboard is updated with the new data.
 
@@ -60,6 +62,12 @@ The project uses three main tables:
 - `trips`
 
 Trips are linked to drivers and vehicles using foreign keys.
+
+## Validation
+
+The API validates required data before saving it.
+
+Vehicle registrations are stored in uppercase, invalid fuel consumption values are rejected, and duplicate registrations are not allowed.
 
 ## Main API routes
 
@@ -100,6 +108,12 @@ Run the database schema:
 psql -U postgres -d transport_operations -f sql/schema.sql
 ```
 
+Optional demo data:
+
+```bash
+psql -U postgres -d transport_operations -f sql/demo-data.sql
+```
+
 Create a `.env` file using `.env.example` and add your PostgreSQL password and openrouteservice API key.
 
 Start the application:
@@ -110,9 +124,7 @@ npm run dev
 
 Open:
 
-```text
 http://localhost:3000
-```
 
 ## Why I built it
 
