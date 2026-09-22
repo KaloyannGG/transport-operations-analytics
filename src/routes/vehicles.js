@@ -12,6 +12,7 @@ router.get("/", async (req, res) => {
         );
 
         res.json(result.rows);
+
     } catch (error) {
         console.log(error);
 
@@ -33,13 +34,42 @@ router.post("/", async (req, res) => {
             average_consumption
         } = req.body;
 
+        // Clean the text values before validation and saving
+        const registration =
+            typeof registration_number === "string"
+                ? registration_number.trim().toUpperCase()
+                : "";
+
+        const vehicleMake =
+            typeof make === "string"
+                ? make.trim()
+                : "";
+
+        const vehicleModel =
+            typeof model === "string"
+                ? model.trim()
+                : "";
+
+        const fuelType =
+            typeof fuel_type === "string" && fuel_type.trim()
+                ? fuel_type.trim()
+                : "Diesel";
+
+        const consumption =
+            Number(average_consumption);
+
+        if (!registration || !vehicleMake) {
+            return res.status(400).json({
+                error: "Registration and make are required"
+            });
+        }
+
         if (
-            !registration_number ||
-            !make ||
-            !average_consumption
+            !Number.isFinite(consumption) ||
+            consumption <= 0
         ) {
             return res.status(400).json({
-                error: "Registration, make and consumption are required"
+                error: "Average consumption must be greater than 0"
             });
         }
 
@@ -56,11 +86,11 @@ router.post("/", async (req, res) => {
             RETURNING *
             `,
             [
-                registration_number,
-                make,
-                model || null,
-                fuel_type || "Diesel",
-                average_consumption
+                registration,
+                vehicleMake,
+                vehicleModel || null,
+                fuelType,
+                consumption
             ]
         );
 
@@ -68,6 +98,13 @@ router.post("/", async (req, res) => {
 
     } catch (error) {
         console.log(error);
+
+        // PostgreSQL error code for a UNIQUE constraint violation
+        if (error.code === "23505") {
+            return res.status(409).json({
+                error: "A vehicle with this registration already exists"
+            });
+        }
 
         res.status(500).json({
             error: "Something went wrong"

@@ -12,8 +12,10 @@ router.get("/", async (req, res) => {
         );
 
         res.json(result.rows);
+
     } catch (error) {
         console.log(error);
+
         res.status(500).json({
             error: "Something went wrong"
         });
@@ -30,7 +32,23 @@ router.post("/", async (req, res) => {
             phone
         } = req.body;
 
-        if (!first_name || !last_name) {
+        // Make sure required values are real text and not only spaces
+        const firstName =
+            typeof first_name === "string"
+                ? first_name.trim()
+                : "";
+
+        const lastName =
+            typeof last_name === "string"
+                ? last_name.trim()
+                : "";
+
+        const driverPhone =
+            typeof phone === "string"
+                ? phone.trim()
+                : "";
+
+        if (!firstName || !lastName) {
             return res.status(400).json({
                 error: "First name and last name are required"
             });
@@ -47,9 +65,9 @@ router.post("/", async (req, res) => {
             RETURNING *
             `,
             [
-                first_name,
-                last_name,
-                phone || null
+                firstName,
+                lastName,
+                driverPhone || null
             ]
         );
 
@@ -72,7 +90,7 @@ router.delete("/:id", async (req, res) => {
 
         const trips = await pool.query(
             `
-            SELECT COUNT(*) 
+            SELECT COUNT(*)
             FROM trips
             WHERE driver_id = $1
             `,
