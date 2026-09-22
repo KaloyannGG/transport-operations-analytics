@@ -18,21 +18,11 @@ CREATE TABLE vehicles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE clients (
-    id SERIAL PRIMARY KEY,
-    company_name VARCHAR(150) NOT NULL,
-    country VARCHAR(100),
-    contact_name VARCHAR(150),
-    email VARCHAR(150),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE trips (
     id SERIAL PRIMARY KEY,
 
     driver_id INTEGER REFERENCES drivers(id),
     vehicle_id INTEGER REFERENCES vehicles(id),
-    client_id INTEGER REFERENCES clients(id),
 
     origin VARCHAR(150) NOT NULL,
     destination VARCHAR(150) NOT NULL,
