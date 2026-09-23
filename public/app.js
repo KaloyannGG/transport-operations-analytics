@@ -284,13 +284,13 @@ function applyTripFilters() {
             const matchesDriver =
                 !driverId ||
                 Number(trip.driver_id) ===
-                    Number(driverId);
+                Number(driverId);
 
 
             const matchesVehicle =
                 !vehicleId ||
                 Number(trip.vehicle_id) ===
-                    Number(vehicleId);
+                Number(vehicleId);
 
 
             const searchableText = `
@@ -583,6 +583,18 @@ function renderTrips(trips) {
         const row =
             document.createElement("tr");
 
+        const deleteButton =
+            trip.status === "planned"
+                ? `
+            <button
+                class="delete-btn"
+                onclick="deleteTrip(${id})"
+            >
+                ×
+            </button>
+        `
+                : "";
+
 
         row.innerHTML = `
             <td>
@@ -631,12 +643,7 @@ function renderTrips(trips) {
                         Details
                     </button>
 
-                    <button
-                        class="delete-btn"
-                        onclick="deleteTrip(${id})"
-                    >
-                        ×
-                    </button>
+                    ${deleteButton}
 
                 </div>
 

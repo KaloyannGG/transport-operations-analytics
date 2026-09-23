@@ -594,14 +594,11 @@ router.delete("/:id", async (req, res) => {
         }
 
 
-        // active trips should be completed or cancelled first
-        if (
-            tripResult.rows[0].status ===
-            "in_progress"
-        ) {
+        // only planned trips can be deleted
+        if (tripResult.rows[0].status !== "planned") {
             return res.status(409).json({
                 error:
-                    "An active trip cannot be deleted"
+                    "Only planned trips can be deleted"
             });
         }
 
