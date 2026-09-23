@@ -254,6 +254,81 @@
 
       <h2>Trips</h2>
 
+      <div class="trip-filter-bar">
+
+  <div class="trip-tabs" id="tripStatusTabs">
+
+    <button
+      type="button"
+      class="trip-tab active"
+      data-status="active"
+    >
+      Active
+    </button>
+
+    <button
+      type="button"
+      class="trip-tab"
+      data-status="planned"
+    >
+      Planned
+    </button>
+
+    <button
+      type="button"
+      class="trip-tab"
+      data-status="in_progress"
+    >
+      In Progress
+    </button>
+
+    <button
+      type="button"
+      class="trip-tab"
+      data-status="completed"
+    >
+      Completed
+    </button>
+
+    <button
+      type="button"
+      class="trip-tab"
+      data-status="cancelled"
+    >
+      Cancelled
+    </button>
+
+    <button
+      type="button"
+      class="trip-tab"
+      data-status="all"
+    >
+      All
+    </button>
+
+  </div>
+
+
+  <div class="trip-filter-options">
+
+    <select id="tripDriverFilter">
+      <option value="">All drivers</option>
+    </select>
+
+    <select id="tripVehicleFilter">
+      <option value="">All vehicles</option>
+    </select>
+
+    <input
+      type="text"
+      id="tripSearch"
+      placeholder="Search driver, vehicle or route..."
+    >
+
+  </div>
+
+</div>
+
       <table>
         <thead>
           <tr>

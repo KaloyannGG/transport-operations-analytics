@@ -10,6 +10,7 @@ function escapeHtml(value) {
 
 
 let loadedTrips = [];
+let currentTripStatusFilter = "active";
 
 // Converts minutes to something like 2h 15m.
 function formatDuration(value) {
@@ -148,6 +149,173 @@ function getTripTiming(trip) {
 
 
     return "—";
+}
+
+// Updates the driver and vehicle trip filters.
+function updateTripFilterOptions() {
+
+    const driverFilter =
+        document.getElementById("tripDriverFilter");
+
+    const vehicleFilter =
+        document.getElementById("tripVehicleFilter");
+
+
+    const selectedDriver =
+        driverFilter.value;
+
+    const selectedVehicle =
+        vehicleFilter.value;
+
+
+    const drivers = new Map();
+    const vehicles = new Map();
+
+
+    loadedTrips.forEach(trip => {
+
+        drivers.set(
+            Number(trip.driver_id),
+            `${trip.first_name} ${trip.last_name}`
+        );
+
+        vehicles.set(
+            Number(trip.vehicle_id),
+            trip.registration_number
+        );
+    });
+
+
+    driverFilter.innerHTML =
+        `<option value="">All drivers</option>`;
+
+    vehicleFilter.innerHTML =
+        `<option value="">All vehicles</option>`;
+
+
+    drivers.forEach((name, id) => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = id;
+        option.textContent = name;
+
+        driverFilter.appendChild(option);
+    });
+
+
+    vehicles.forEach((registration, id) => {
+
+        const option =
+            document.createElement("option");
+
+        option.value = id;
+        option.textContent = registration;
+
+        vehicleFilter.appendChild(option);
+    });
+
+
+    if (
+        [...drivers.keys()]
+            .includes(Number(selectedDriver))
+    ) {
+        driverFilter.value =
+            selectedDriver;
+    }
+
+
+    if (
+        [...vehicles.keys()]
+            .includes(Number(selectedVehicle))
+    ) {
+        vehicleFilter.value =
+            selectedVehicle;
+    }
+}
+// Applies the selected filters to the trips table.
+function applyTripFilters() {
+
+    const driverId =
+        document
+            .getElementById("tripDriverFilter")
+            .value;
+
+    const vehicleId =
+        document
+            .getElementById("tripVehicleFilter")
+            .value;
+
+    const search =
+        document
+            .getElementById("tripSearch")
+            .value
+            .trim()
+            .toLowerCase();
+
+
+    const filteredTrips =
+        loadedTrips.filter(trip => {
+
+            let matchesStatus = true;
+
+
+            if (
+                currentTripStatusFilter ===
+                "active"
+            ) {
+                matchesStatus =
+                    trip.status === "planned" ||
+                    trip.status === "in_progress";
+            }
+
+            else if (
+                currentTripStatusFilter !==
+                "all"
+            ) {
+                matchesStatus =
+                    trip.status ===
+                    currentTripStatusFilter;
+            }
+
+
+            const matchesDriver =
+                !driverId ||
+                Number(trip.driver_id) ===
+                    Number(driverId);
+
+
+            const matchesVehicle =
+                !vehicleId ||
+                Number(trip.vehicle_id) ===
+                    Number(vehicleId);
+
+
+            const searchableText = `
+                ${trip.first_name}
+                ${trip.last_name}
+                ${trip.registration_number}
+                ${trip.origin}
+                ${trip.destination}
+            `.toLowerCase();
+
+
+            const matchesSearch =
+                !search ||
+                searchableText.includes(search);
+
+
+            return (
+                matchesStatus &&
+                matchesDriver &&
+                matchesVehicle &&
+                matchesSearch
+            );
+        });
+
+
+    renderTrips(filteredTrips);
 }
 // Loads the main dashboard totals.
 async function loadSummary() {
@@ -319,7 +487,7 @@ async function loadVehicles() {
     }
 }
 
-// Loads all trips and builds the trips table.
+// Loads all trips from the backend.
 async function loadTrips() {
 
     try {
@@ -330,132 +498,14 @@ async function loadTrips() {
         const trips =
             await response.json();
 
-        loadedTrips = trips;
+
+        loadedTrips =
+            trips;
 
 
-        const table =
-            document.getElementById("tripsTable");
+        updateTripFilterOptions();
 
-        table.innerHTML = "";
-
-
-        trips.forEach(trip => {
-
-            const date =
-                new Date(trip.trip_date)
-                    .toLocaleDateString("en-GB");
-
-            const id =
-                Number(trip.id);
-
-
-            let statusActions = "";
-
-
-            if (trip.status === "planned") {
-
-                statusActions = `
-                    <button
-                        class="action-btn start-action"
-                        onclick="requestTripStatusChange(${id}, 'in_progress')"
-                    >
-                        Start
-                    </button>
-
-                    <button
-                        class="action-btn danger-action"
-                        onclick="requestTripStatusChange(${id}, 'cancelled')"
-                    >
-                        Cancel
-                    </button>
-                `;
-            }
-
-
-            if (trip.status === "in_progress") {
-
-                statusActions = `
-                    <button
-                        class="action-btn"
-                        onclick="requestTripStatusChange(${id}, 'completed')"
-                    >
-                        Complete
-                    </button>
-
-                    <button
-                        class="action-btn danger-action"
-                        onclick="requestTripStatusChange(${id}, 'cancelled')"
-                    >
-                        Cancel
-                    </button>
-                `;
-            }
-
-
-            const row =
-                document.createElement("tr");
-
-
-            row.innerHTML = `
-                <td>
-                    ${escapeHtml(date)}
-                </td>
-
-                <td>
-                    ${escapeHtml(trip.first_name)}
-                    ${escapeHtml(trip.last_name)}
-                </td>
-
-                <td>
-                    ${escapeHtml(trip.registration_number)}
-                </td>
-
-                <td>
-                    ${escapeHtml(trip.origin)}
-                    →
-                    ${escapeHtml(trip.destination)}
-                </td>
-
-                <td>
-                    <span class="status-badge status-${trip.status}">
-                        ${escapeHtml(getStatusLabel(trip.status))}
-                    </span>
-                </td>
-
-                <td>
-                    €${Number(trip.revenue).toFixed(2)}
-                </td>
-
-                <td>
-                    €${Number(trip.profit).toFixed(2)}
-                </td>
-
-                <td>
-                    <div class="trip-actions">
-
-                        ${statusActions}
-
-                        <button
-                            class="action-btn details-btn"
-                            onclick="showTripDetails(${id})"
-                        >
-                            Details
-                        </button>
-
-                        <button
-                            class="delete-btn"
-                            onclick="deleteTrip(${id})"
-                        >
-                            ×
-                        </button>
-
-                    </div>
-                </td>
-            `;
-
-
-            table.appendChild(row);
-        });
+        applyTripFilters();
 
 
     } catch (error) {
@@ -465,6 +515,136 @@ async function loadTrips() {
             error
         );
     }
+}
+// Builds the trips table using the supplied trips.
+function renderTrips(trips) {
+
+    const table =
+        document.getElementById("tripsTable");
+
+
+    table.innerHTML = "";
+
+
+    trips.forEach(trip => {
+
+        const date =
+            new Date(trip.trip_date)
+                .toLocaleDateString("en-GB");
+
+        const id =
+            Number(trip.id);
+
+
+        let statusActions = "";
+
+
+        if (trip.status === "planned") {
+
+            statusActions = `
+                <button
+                    class="action-btn start-action"
+                    onclick="requestTripStatusChange(${id}, 'in_progress')"
+                >
+                    Start
+                </button>
+
+                <button
+                    class="action-btn danger-action"
+                    onclick="requestTripStatusChange(${id}, 'cancelled')"
+                >
+                    Cancel
+                </button>
+            `;
+        }
+
+
+        if (trip.status === "in_progress") {
+
+            statusActions = `
+                <button
+                    class="action-btn"
+                    onclick="requestTripStatusChange(${id}, 'completed')"
+                >
+                    Complete
+                </button>
+
+                <button
+                    class="action-btn danger-action"
+                    onclick="requestTripStatusChange(${id}, 'cancelled')"
+                >
+                    Cancel
+                </button>
+            `;
+        }
+
+
+        const row =
+            document.createElement("tr");
+
+
+        row.innerHTML = `
+            <td>
+                ${escapeHtml(date)}
+            </td>
+
+            <td>
+                ${escapeHtml(trip.first_name)}
+                ${escapeHtml(trip.last_name)}
+            </td>
+
+            <td>
+                ${escapeHtml(trip.registration_number)}
+            </td>
+
+            <td>
+                ${escapeHtml(trip.origin)}
+                →
+                ${escapeHtml(trip.destination)}
+            </td>
+
+            <td>
+                <span class="status-badge status-${trip.status}">
+                    ${escapeHtml(getStatusLabel(trip.status))}
+                </span>
+            </td>
+
+            <td>
+                €${Number(trip.revenue).toFixed(2)}
+            </td>
+
+            <td>
+                €${Number(trip.profit).toFixed(2)}
+            </td>
+
+            <td>
+
+                <div class="trip-actions">
+
+                    ${statusActions}
+
+                    <button
+                        class="action-btn details-btn"
+                        onclick="showTripDetails(${id})"
+                    >
+                        Details
+                    </button>
+
+                    <button
+                        class="delete-btn"
+                        onclick="deleteTrip(${id})"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+            </td>
+        `;
+
+
+        table.appendChild(row);
+    });
 }
 
 // Loads drivers and vehicles for the Add Trip dropdowns.
@@ -1333,5 +1513,62 @@ async function refreshDashboard() {
     await loadTrips();
     await loadFormOptions();
 }
+const tripStatusTabs =
+    document.querySelectorAll(".trip-tab");
+
+const tripDriverFilter =
+    document.getElementById("tripDriverFilter");
+
+const tripVehicleFilter =
+    document.getElementById("tripVehicleFilter");
+
+const tripSearch =
+    document.getElementById("tripSearch");
+
+
+// Status tabs
+tripStatusTabs.forEach(tab => {
+
+    tab.addEventListener(
+        "click",
+        () => {
+
+            tripStatusTabs.forEach(button => {
+                button.classList.remove("active");
+            });
+
+
+            tab.classList.add("active");
+
+
+            currentTripStatusFilter =
+                tab.dataset.status;
+
+
+            applyTripFilters();
+        }
+    );
+});
+
+
+// Driver filter
+tripDriverFilter.addEventListener(
+    "change",
+    applyTripFilters
+);
+
+
+// Vehicle filter
+tripVehicleFilter.addEventListener(
+    "change",
+    applyTripFilters
+);
+
+
+// Search
+tripSearch.addEventListener(
+    "input",
+    applyTripFilters
+);
 
 refreshDashboard();
