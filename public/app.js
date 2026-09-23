@@ -8,6 +8,147 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
+
+let loadedTrips = [];
+
+// Converts minutes to something like 2h 15m.
+function formatDuration(value) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return "—";
+    }
+
+    const totalMinutes =
+        Math.round(Number(value));
+
+    if (!Number.isFinite(totalMinutes)) {
+        return "—";
+    }
+
+    const hours =
+        Math.floor(totalMinutes / 60);
+
+    const minutes =
+        totalMinutes % 60;
+
+    if (hours === 0) {
+        return `${minutes}m`;
+    }
+
+    return `${hours}h ${minutes}m`;
+}
+
+
+// Formats database timestamps for the table.
+function formatDateTime(value) {
+
+    if (!value) {
+        return "—";
+    }
+
+    return new Date(value)
+        .toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+}
+
+
+function getStatusLabel(status) {
+
+    const labels = {
+        planned: "Planned",
+        in_progress: "In Progress",
+        completed: "Completed",
+        cancelled: "Cancelled"
+    };
+
+    return labels[status] || status;
+}
+
+
+// Only shows valid next statuses.
+function getStatusOptions(status) {
+
+    if (status === "planned") {
+        return [
+            "planned",
+            "in_progress",
+            "cancelled"
+        ];
+    }
+
+    if (status === "in_progress") {
+        return [
+            "in_progress",
+            "completed",
+            "cancelled"
+        ];
+    }
+
+    return [status];
+}
+
+
+// Builds the timing text shown in the trips table.
+function getTripTiming(trip) {
+
+    if (trip.status === "planned") {
+        return `
+            <div>
+                Est. ${formatDuration(trip.duration_minutes)}
+            </div>
+        `;
+    }
+
+
+    if (trip.status === "in_progress") {
+        return `
+            <div>
+                Started:
+                ${escapeHtml(formatDateTime(trip.started_at))}
+            </div>
+
+            <small>
+                Est. ${formatDuration(trip.duration_minutes)}
+            </small>
+        `;
+    }
+
+
+    if (trip.status === "completed") {
+        return `
+            <div>
+                Actual:
+                ${formatDuration(trip.actual_duration_minutes)}
+            </div>
+
+            <small>
+                Est. ${formatDuration(trip.duration_minutes)}
+            </small>
+        `;
+    }
+
+
+    if (trip.status === "cancelled") {
+        return `
+            <div>
+                Cancelled:
+                ${escapeHtml(formatDateTime(trip.cancelled_at))}
+            </div>
+        `;
+    }
+
+
+    return "—";
+}
 // Loads the main dashboard totals.
 async function loadSummary() {
     try {
@@ -175,12 +316,17 @@ async function loadVehicles() {
 
 // Loads all trips and builds the trips table.
 async function loadTrips() {
+
     try {
+
         const response =
             await fetch("/api/trips");
 
         const trips =
             await response.json();
+
+        loadedTrips = trips;
+
 
         const table =
             document.getElementById("tripsTable");
@@ -189,12 +335,41 @@ async function loadTrips() {
 
 
         trips.forEach(trip => {
+
             const date =
                 new Date(trip.trip_date)
                     .toLocaleDateString("en-GB");
 
             const id =
                 Number(trip.id);
+
+            const terminalStatus =
+                trip.status === "completed" ||
+                trip.status === "cancelled";
+
+            const statusOptions =
+                getStatusOptions(trip.status)
+                    .map(status => `
+                        <option
+                            value="${status}"
+                            ${status === trip.status ? "selected" : ""}
+                        >
+                            ${getStatusLabel(status)}
+                        </option>
+                    `)
+                    .join("");
+
+
+            const cancellationNote =
+                trip.status === "cancelled" &&
+                    trip.cancellation_note
+                    ? `
+                        <div class="trip-note">
+                            ${escapeHtml(trip.cancellation_note)}
+                        </div>
+                    `
+                    : "";
+
 
             const row =
                 document.createElement("tr");
@@ -225,31 +400,21 @@ async function loadTrips() {
                 </td>
 
                 <td>
+
                     <select
                         class="trip-status ${trip.status}"
-                        onchange="updateTripStatus(${id}, this.value)"
+                        onchange="requestTripStatusChange(${id}, this)"
+                        ${terminalStatus ? "disabled" : ""}
                     >
-                        <option
-                            value="planned"
-                            ${trip.status === "planned" ? "selected" : ""}
-                        >
-                            Planned
-                        </option>
-
-                        <option
-                            value="completed"
-                            ${trip.status === "completed" ? "selected" : ""}
-                        >
-                            Completed
-                        </option>
-
-                        <option
-                            value="cancelled"
-                            ${trip.status === "cancelled" ? "selected" : ""}
-                        >
-                            Cancelled
-                        </option>
+                        ${statusOptions}
                     </select>
+
+                    ${cancellationNote}
+
+                </td>
+
+                <td class="trip-timing">
+                    ${getTripTiming(trip)}
                 </td>
 
                 <td>
@@ -274,10 +439,12 @@ async function loadTrips() {
                 </td>
             `;
 
+
             table.appendChild(row);
         });
 
     } catch (error) {
+
         console.log(
             "Could not load trips",
             error
@@ -530,7 +697,7 @@ tripForm.addEventListener(
         const submitButton =
             tripForm.querySelector(
                 'button[type="submit"]'
-             );
+            );
 
 
         const trip = {
@@ -584,12 +751,7 @@ tripForm.addEventListener(
                     document
                         .getElementById("otherCosts")
                         .value
-                ),
-
-            status:
-                document
-                    .getElementById("tripStatus")
-                    .value
+                )
         };
 
 
@@ -597,8 +759,8 @@ tripForm.addEventListener(
             message.textContent =
                 "Calculating route and saving trip...";
 
-        submitButton.disabled = true;
-        submitButton.textContent = "Calculating...";
+            submitButton.disabled = true;
+            submitButton.textContent = "Calculating...";
 
             const response =
                 await fetch("/api/trips", {
@@ -637,59 +799,264 @@ tripForm.addEventListener(
         } catch (error) {
             message.textContent =
                 `Error: ${error.message}`;
-        }  finally {
-                submitButton.disabled = false;
-                submitButton.textContent = "Add Trip";
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "Add Trip";
         }
     }
 );
 
-// Updates only the trip status.
-async function updateTripStatus(id, status) {
-    try {
-        const response =
-            await fetch(
-                `/api/trips/${id}/status`,
-                {
-                    method: "PATCH",
+const statusModal =
+    document.getElementById("statusModal");
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+const statusModalTitle =
+    document.getElementById("statusModalTitle");
 
-                    body:
-                        JSON.stringify({
-                            status
-                        })
-                }
-            );
+const statusModalDetails =
+    document.getElementById("statusModalDetails");
+
+const statusModalInfo =
+    document.getElementById("statusModalInfo");
+
+const cancellationNoteGroup =
+    document.getElementById("cancellationNoteGroup");
+
+const cancellationNote =
+    document.getElementById("cancellationNote");
+
+const statusModalError =
+    document.getElementById("statusModalError");
+
+const statusModalBack =
+    document.getElementById("statusModalBack");
+
+const statusModalConfirm =
+    document.getElementById("statusModalConfirm");
 
 
-        const data =
-            await response.json();
+let pendingStatusChange = null;
 
 
-        if (!response.ok) {
-            alert(
-                data.error ||
-                "Could not update trip"
-            );
+// Opens the confirmation window before changing status.
+function requestTripStatusChange(id, selectElement) {
 
+    const trip =
+        loadedTrips.find(
+            trip =>
+                Number(trip.id) === Number(id)
+        );
+
+
+    if (!trip) {
+        selectElement.value = "planned";
+        return;
+    }
+
+
+    const newStatus =
+        selectElement.value;
+
+
+    if (newStatus === trip.status) {
+        return;
+    }
+
+
+    pendingStatusChange = {
+        trip,
+        newStatus,
+        oldStatus: trip.status,
+        selectElement
+    };
+
+
+    statusModalDetails.textContent =
+        `${trip.first_name} ${trip.last_name} | ` +
+        `${trip.registration_number} | ` +
+        `${trip.origin} → ${trip.destination}`;
+
+
+    cancellationNote.value = "";
+    statusModalError.textContent = "";
+
+
+    if (newStatus === "in_progress") {
+
+        statusModalTitle.textContent =
+            "Start this trip?";
+
+        statusModalInfo.textContent =
+            "The start time will be saved automatically.";
+
+        statusModalConfirm.textContent =
+            "Start Trip";
+
+        cancellationNoteGroup.hidden = true;
+    }
+
+
+    if (newStatus === "completed") {
+
+        statusModalTitle.textContent =
+            "Complete this trip?";
+
+        statusModalInfo.textContent =
+            "The completion time will be saved automatically.";
+
+        statusModalConfirm.textContent =
+            "Complete Trip";
+
+        cancellationNoteGroup.hidden = true;
+    }
+
+
+    if (newStatus === "cancelled") {
+
+        statusModalTitle.textContent =
+            "Cancel this trip?";
+
+        statusModalInfo.textContent =
+            "The cancellation time will be saved automatically.";
+
+        statusModalConfirm.textContent =
+            "Cancel Trip";
+
+        cancellationNoteGroup.hidden = false;
+    }
+
+
+    statusModal.hidden = false;
+}
+
+
+// Closes the modal.
+// If the change was not saved, the old status is restored.
+function closeStatusModal(restoreStatus = true) {
+
+    if (
+        restoreStatus &&
+        pendingStatusChange
+    ) {
+        pendingStatusChange
+            .selectElement
+            .value =
+                pendingStatusChange.oldStatus;
+    }
+
+
+    statusModal.hidden = true;
+
+    cancellationNote.value = "";
+    statusModalError.textContent = "";
+
+    pendingStatusChange = null;
+}
+
+
+statusModalBack.addEventListener(
+    "click",
+    () => {
+        closeStatusModal(true);
+    }
+);
+
+
+statusModalConfirm.addEventListener(
+    "click",
+    async () => {
+
+        if (!pendingStatusChange) {
             return;
         }
 
 
-        await refreshDashboard();
+        const {
+            trip,
+            newStatus
+        } = pendingStatusChange;
 
-    } catch (error) {
-        console.log(error);
 
-        alert(
-            "Could not update trip status"
-        );
+        const body = {
+            status: newStatus
+        };
+
+
+        if (newStatus === "cancelled") {
+
+            const note =
+                cancellationNote
+                    .value
+                    .trim();
+
+
+            if (!note) {
+
+                statusModalError.textContent =
+                    "Please enter a cancellation reason.";
+
+                return;
+            }
+
+
+            body.cancellation_note =
+                note;
+        }
+
+
+        try {
+
+            statusModalConfirm.disabled = true;
+
+
+            const response =
+                await fetch(
+                    `/api/trips/${trip.id}/status`,
+                    {
+                        method: "PATCH",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(body)
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                statusModalError.textContent =
+                    data.error ||
+                    "Could not update trip.";
+
+                return;
+            }
+
+
+            closeStatusModal(false);
+
+            await refreshDashboard();
+
+
+        } catch (error) {
+
+            console.log(error);
+
+            statusModalError.textContent =
+                "Could not update trip status.";
+
+        } finally {
+
+            statusModalConfirm.disabled = false;
+        }
     }
-}
+);
 
 // Deletes a trip after confirmation.
 async function deleteTrip(id) {

@@ -192,3 +192,62 @@ button:disabled {
     color: #991b1b;
     border-color: #fecaca;
 }
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal[hidden] {
+    display: none;
+}
+
+.modal-card {
+    background: white;
+    width: min(460px, 90%);
+    padding: 24px;
+    border-radius: 10px;
+}
+
+.modal-card h3 {
+    margin-top: 0;
+}
+
+.modal-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 8px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+#statusModalError {
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.trip-note {
+    margin-top: 6px;
+    max-width: 180px;
+    font-size: 12px;
+    white-space: normal;
+}
+
+.trip-timing {
+    white-space: nowrap;
+}
+
+.trip-timing small {
+    display: block;
+    margin-top: 3px;
+}

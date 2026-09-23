@@ -118,7 +118,7 @@
 
             <input type="date" id="tripDate" required>
           </div>
-          <div>
+          <!-- <div>
             <label for="tripStatus">Status</label>
 
             <select id="tripStatus">
@@ -126,7 +126,7 @@
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
-          </div>
+          </div> -->
 
 
           <div>
@@ -203,78 +203,120 @@
     </section>
 
 
-<section class="table-section">
+    <section class="table-section">
 
-    <h2>Driver Performance</h2>
+      <h2>Driver Performance</h2>
 
-    <table>
+      <table>
         <thead>
-            <tr>
-                <th>Driver</th>
-                <th>Trips</th>
-                <th>KM</th>
-                <th>Revenue</th>
-                <th>Profit</th>
-                <th></th>
-            </tr>
+          <tr>
+            <th>Driver</th>
+            <th>Trips</th>
+            <th>KM</th>
+            <th>Revenue</th>
+            <th>Profit</th>
+            <th></th>
+          </tr>
         </thead>
 
         <tbody id="driversTable"></tbody>
-    </table>
+      </table>
 
-</section>
+    </section>
 
 
-<section class="table-section">
+    <section class="table-section">
 
-    <h2>Vehicle Performance</h2>
+      <h2>Vehicle Performance</h2>
 
-    <table>
+      <table>
         <thead>
-            <tr>
-                <th>Vehicle</th>
-                <th>Trips</th>
-                <th>KM</th>
-                <th>Revenue</th>
-                <th>Fuel Cost</th>
-                <th>Profit</th>
-                <th></th>
-            </tr>
+          <tr>
+            <th>Vehicle</th>
+            <th>Trips</th>
+            <th>KM</th>
+            <th>Revenue</th>
+            <th>Fuel Cost</th>
+            <th>Profit</th>
+            <th></th>
+          </tr>
         </thead>
 
         <tbody id="vehiclesTable"></tbody>
-    </table>
+      </table>
 
-</section>
+    </section>
 
 
-<section class="table-section">
+    <section class="table-section">
 
-    <h2>Trips</h2>
+      <h2>Trips</h2>
 
-    <table>
+      <table>
         <thead>
-            <tr>
-                <th>Date</th>
-                <th>Driver</th>
-                <th>Vehicle</th>
-                <th>Route</th>
-                <th>KM</th>
-                <th>Status</th>
-                <th>Revenue</th>
-                <th>Fuel</th>
-                <th>Profit</th>
-                <th></th>
-            </tr>
+          <tr>
+            <th>Date</th>
+            <th>Driver</th>
+            <th>Vehicle</th>
+            <th>Route</th>
+            <th>KM</th>
+            <th>Status</th>
+            <th>Timing</th>
+            <th>Revenue</th>
+            <th>Fuel</th>
+            <th>Profit</th>
+            <th></th>
+          </tr>
         </thead>
 
         <tbody id="tripsTable"></tbody>
-    </table>
+      </table>
 
-</section>
+    </section>
 
   </div>
+  <div id="statusModal" class="modal" hidden>
 
+    <div class="modal-card">
+
+      <h3 id="statusModalTitle">
+        Confirm status change
+      </h3>
+
+      <p id="statusModalDetails"></p>
+
+      <p id="statusModalInfo"></p>
+
+
+      <div id="cancellationNoteGroup" hidden>
+
+        <label for="cancellationNote">
+          Cancellation reason *
+        </label>
+
+        <textarea id="cancellationNote" rows="4" placeholder="Enter the reason for cancelling this trip..."></textarea>
+
+      </div>
+
+
+      <p id="statusModalError"></p>
+
+
+      <div class="modal-actions">
+
+        <button type="button" id="statusModalBack">
+          Go Back
+        </button>
+
+        <button type="button" id="statusModalConfirm">
+          Confirm
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
 
   <script src="app.js"></script>
 
