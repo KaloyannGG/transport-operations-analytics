@@ -1,26 +1,27 @@
 # Transport Operations Analytics
 
-This is a small full-stack project I built to practice JavaScript, SQL, PostgreSQL and working with external APIs.
+A small full-stack project for managing transport trips, drivers and vehicles.
 
-The idea is a simple internal tool for a transport company. It keeps information about drivers, vehicles and trips, calculates route distance and fuel costs, and shows basic performance data.
+I built it mainly to practice JavaScript, Node.js, PostgreSQL and SQL in a project with more realistic business logic instead of a simple CRUD application.
 
 ## Features
 
-- Add and manage drivers
-- Add and manage vehicles
-- Create transport trips
-- Automatic route distance and travel time calculation
-- Automatic fuel usage and fuel cost calculation
-- Revenue, costs and profit tracking
-- Planned, Completed and Cancelled trip statuses
-- Driver and vehicle performance overview
-- Input validation for drivers, vehicles and trips
-- Duplicate vehicle registration protection
-- PostgreSQL database storage
+- Manage drivers and vehicles
+- Create and track transport trips
+- Route distance and estimated travel time
+- Fuel cost calculation based on vehicle consumption
+- Revenue, costs and profit calculation
+- Trip statuses: Planned, In Progress, Completed and Cancelled
+- Start, completion and cancellation timestamps
+- Cancellation reason
+- Driver and vehicle availability
+- Trip filtering and search
+- Trip details view
+- CSV export of filtered trips
+- Driver and vehicle performance statistics
+- Backend validation and PostgreSQL constraints
 
-The financial dashboard includes completed trips only.
-
-## Technologies
+## Tech Stack
 
 - JavaScript
 - Node.js
@@ -35,13 +36,27 @@ The financial dashboard includes completed trips only.
 
 ## How it works
 
-When a trip is added, the app gets the coordinates for the origin and destination using Open-Meteo.
+The frontend communicates with a Node.js / Express REST API.
 
-The coordinates are then sent to openrouteservice to get the route distance and estimated travel time.
+Trip, driver and vehicle data is stored in PostgreSQL.
 
-The app reads the selected vehicle's average fuel consumption from PostgreSQL and calculates the estimated fuel cost based on the distance and fuel price.
+When a trip is created, the application uses external APIs to find the coordinates of the origin and destination and calculate the route distance and estimated travel time.
 
-The trip is saved in PostgreSQL and the dashboard is updated with the new data.
+The selected vehicle's average fuel consumption is then used to estimate the fuel cost for the trip.
+
+Trips follow a simple status flow:
+
+```text
+Planned -> In Progress -> Completed
+   |             |
+   +----------> Cancelled
+```
+
+Starting, completing or cancelling a trip automatically saves the relevant timestamp.
+
+A driver or vehicle with an active trip is shown as `On Trip`. Otherwise it is shown as `Available`.
+
+The dashboard statistics use completed trips for the financial calculations.
 
 ## Screenshots
 
@@ -49,60 +64,70 @@ The trip is saved in PostgreSQL and the dashboard is updated with the new data.
 
 ![Dashboard](screenshots/dashboard.png)
 
-### Performance and trips
+### Driver and Vehicle Performance
 
 ![Analytics](screenshots/analytics.png)
 
+### Trips Dashboard and Export
+
+![Trips](screenshots/trips.png)
+
+### Trip Details
+
+![TripDetails](screenshots/trip-details.png)
+
 ## Database
 
-The project uses three main tables:
-
-- `drivers`
-- `vehicles`
-- `trips`
-
-Trips are linked to drivers and vehicles using foreign keys.
-
-## Validation
-
-The API validates required data before saving it.
-
-Vehicle registrations are stored in uppercase, invalid fuel consumption values are rejected, and duplicate registrations are not allowed.
-
-## Main API routes
+The application uses three main tables:
 
 ```text
-GET  /api/drivers
-POST /api/drivers
+drivers
+vehicles
+trips
+```
 
-GET  /api/vehicles
-POST /api/vehicles
+Trips are connected to drivers and vehicles using foreign keys.
+
+The database also contains constraints for important rules such as valid trip statuses and preventing the same driver or vehicle from having more than one active trip.
+
+## API
+
+Main routes:
+
+```text
+GET    /api/drivers
+POST   /api/drivers
+DELETE /api/drivers/:id
+
+GET    /api/vehicles
+POST   /api/vehicles
+DELETE /api/vehicles/:id
 
 GET    /api/trips
 POST   /api/trips
 PATCH  /api/trips/:id/status
 DELETE /api/trips/:id
 
-GET /api/analytics/summary
-GET /api/analytics/drivers
-GET /api/analytics/vehicles
+GET    /api/analytics/summary
+GET    /api/analytics/drivers
+GET    /api/analytics/vehicles
 ```
 
-## Setup
+## Run locally
 
-Install dependencies:
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-Create a PostgreSQL database named:
+Create a PostgreSQL database:
 
 ```text
 transport_operations
 ```
 
-Run the database schema:
+Run the schema:
 
 ```bash
 psql -U postgres -d transport_operations -f sql/schema.sql
@@ -114,20 +139,16 @@ Optional demo data:
 psql -U postgres -d transport_operations -f sql/demo-data.sql
 ```
 
-Create a `.env` file using `.env.example` and add your PostgreSQL password and openrouteservice API key.
+Create a `.env` file using `.env.example` and add your database details and openrouteservice API key.
 
-Start the application:
+Start the server:
 
 ```bash
 npm run dev
 ```
 
-Open:
+Then open:
 
+```text
 http://localhost:3000
-
-## Why I built it
-
-I wanted to build something where I could combine JavaScript with SQL, PostgreSQL and API integration instead of making another basic frontend project.
-
-The transport use case gave me useful data to work with such as routes, mileage, fuel consumption, costs, revenue and profit.
+```

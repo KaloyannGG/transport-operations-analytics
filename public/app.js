@@ -523,9 +523,7 @@ function renderTrips(trips) {
     const table =
         document.getElementById("tripsTable");
 
-
     table.innerHTML = "";
-
 
     trips.forEach(trip => {
 
@@ -536,9 +534,7 @@ function renderTrips(trips) {
         const id =
             Number(trip.id);
 
-
         let statusActions = "";
-
 
         if (trip.status === "planned") {
 
@@ -559,7 +555,6 @@ function renderTrips(trips) {
             `;
         }
 
-
         if (trip.status === "in_progress") {
 
             statusActions = `
@@ -579,22 +574,8 @@ function renderTrips(trips) {
             `;
         }
 
-
         const row =
             document.createElement("tr");
-
-        const deleteButton =
-            trip.status === "planned"
-                ? `
-            <button
-                class="delete-btn"
-                onclick="deleteTrip(${id})"
-            >
-                ×
-            </button>
-        `
-                : "";
-
 
         row.innerHTML = `
             <td>
@@ -631,7 +612,6 @@ function renderTrips(trips) {
             </td>
 
             <td>
-
                 <div class="trip-actions">
 
                     ${statusActions}
@@ -643,13 +623,18 @@ function renderTrips(trips) {
                         Details
                     </button>
 
-                    ${deleteButton}
+                    ${trip.status !== "in_progress" ? `
+                        <button
+                            class="delete-btn"
+                            onclick="deleteTrip(${id})"
+                        >
+                            ×
+                        </button>
+                    ` : ""}
 
                 </div>
-
             </td>
         `;
-
 
         table.appendChild(row);
     });

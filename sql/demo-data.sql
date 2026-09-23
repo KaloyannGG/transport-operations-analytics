@@ -1,14 +1,16 @@
+-- Demo drivers
 INSERT INTO drivers (
     first_name,
     last_name,
     phone
 )
 VALUES
-    ('Ivan', 'Petrov', '+359888111111'),
-    ('Georgi', 'Ivanov', '+359888222222'),
-    ('Martin', 'Dimitrov', '+359888333333');
+    ('Ivan', 'Petrov', '0888123456'),
+    ('Georgi', 'Dimitrov', '0888234567'),
+    ('Nikolay', 'Ivanov', '0888345678');
 
 
+-- Demo vehicles
 INSERT INTO vehicles (
     registration_number,
     make,
@@ -17,11 +19,142 @@ INSERT INTO vehicles (
     average_consumption
 )
 VALUES
-    ('CA1234AB', 'Volvo', 'FH', 'Diesel', 28.5),
-    ('CB5678CD', 'Scania', 'R450', 'Diesel', 29.2),
-    ('CT9012EF', 'Mercedes-Benz', 'Actros', 'Diesel', 27.8);
+    ('CT1234AB', 'Mercedes-Benz', 'Sprinter', 'Diesel', 10.5),
+    ('CT5678KM', 'Ford', 'Transit', 'Diesel', 9.8),
+    ('CT9012PK', 'Iveco', 'Daily', 'Diesel', 11.2);
 
 
+-- Completed trip
+INSERT INTO trips (
+    driver_id,
+    vehicle_id,
+    origin,
+    destination,
+    trip_date,
+    distance_km,
+    duration_minutes,
+    revenue,
+    fuel_cost,
+    other_costs,
+    status,
+    started_at,
+    completed_at
+)
+VALUES (
+    1,
+    1,
+    'Stara Zagora',
+    'Sofia',
+    CURRENT_DATE - INTERVAL '6 days',
+    232,
+    140,
+    320,
+    58,
+    20,
+    'completed',
+    CURRENT_TIMESTAMP - INTERVAL '6 days 3 hours',
+    CURRENT_TIMESTAMP - INTERVAL '6 days 40 minutes'
+);
+
+
+-- Completed trip
+INSERT INTO trips (
+    driver_id,
+    vehicle_id,
+    origin,
+    destination,
+    trip_date,
+    distance_km,
+    duration_minutes,
+    revenue,
+    fuel_cost,
+    other_costs,
+    status,
+    started_at,
+    completed_at
+)
+VALUES (
+    2,
+    2,
+    'Plovdiv',
+    'Burgas',
+    CURRENT_DATE - INTERVAL '4 days',
+    250,
+    155,
+    360,
+    62,
+    25,
+    'completed',
+    CURRENT_TIMESTAMP - INTERVAL '4 days 3 hours',
+    CURRENT_TIMESTAMP - INTERVAL '4 days 20 minutes'
+);
+
+
+-- Completed trip
+INSERT INTO trips (
+    driver_id,
+    vehicle_id,
+    origin,
+    destination,
+    trip_date,
+    distance_km,
+    duration_minutes,
+    revenue,
+    fuel_cost,
+    other_costs,
+    status,
+    started_at,
+    completed_at
+)
+VALUES (
+    3,
+    3,
+    'Stara Zagora',
+    'Varna',
+    CURRENT_DATE - INTERVAL '2 days',
+    290,
+    190,
+    430,
+    78,
+    30,
+    'completed',
+    CURRENT_TIMESTAMP - INTERVAL '2 days 4 hours',
+    CURRENT_TIMESTAMP - INTERVAL '2 days 35 minutes'
+);
+
+
+-- Active trip
+INSERT INTO trips (
+    driver_id,
+    vehicle_id,
+    origin,
+    destination,
+    trip_date,
+    distance_km,
+    duration_minutes,
+    revenue,
+    fuel_cost,
+    other_costs,
+    status,
+    started_at
+)
+VALUES (
+    1,
+    1,
+    'Stara Zagora',
+    'Plovdiv',
+    CURRENT_DATE,
+    92,
+    65,
+    160,
+    24,
+    10,
+    'in_progress',
+    CURRENT_TIMESTAMP - INTERVAL '45 minutes'
+);
+
+
+-- Planned trip
 INSERT INTO trips (
     driver_id,
     vehicle_id,
@@ -35,88 +168,49 @@ INSERT INTO trips (
     other_costs,
     status
 )
-VALUES
-
-(
-    (SELECT id FROM drivers WHERE first_name = 'Ivan' AND last_name = 'Petrov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CA1234AB'),
+VALUES (
+    2,
+    2,
     'Stara Zagora',
-    'Sofia',
-    '2026-08-12',
-    232,
-    137,
-    450,
-    102.49,
-    30,
-    'completed'
-),
-
-(
-    (SELECT id FROM drivers WHERE first_name = 'Georgi' AND last_name = 'Ivanov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CB5678CD'),
-    'Plovdiv',
-    'Burgas',
-    '2026-08-20',
-    253,
-    155,
-    520,
-    118.40,
-    45,
-    'completed'
-),
-
-(
-    (SELECT id FROM drivers WHERE first_name = 'Martin' AND last_name = 'Dimitrov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CT9012EF'),
-    'Sofia',
-    'Varna',
-    '2026-09-05',
-    441,
-    300,
-    820,
-    190.30,
+    'Haskovo',
+    CURRENT_DATE + INTERVAL '1 day',
+    96,
     70,
-    'completed'
-),
-
-(
-    (SELECT id FROM drivers WHERE first_name = 'Ivan' AND last_name = 'Petrov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CA1234AB'),
-    'Stara Zagora',
-    'Plovdiv',
-    '2026-09-10',
-    92,
-    65,
-    260,
-    40.65,
-    20,
-    'completed'
-),
-
-(
-    (SELECT id FROM drivers WHERE first_name = 'Georgi' AND last_name = 'Ivanov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CB5678CD'),
-    'Sofia',
-    'Thessaloniki',
-    '2026-09-25',
-    295,
-    210,
-    650,
-    133.60,
-    60,
+    175,
+    25,
+    8,
     'planned'
-),
+);
 
-(
-    (SELECT id FROM drivers WHERE first_name = 'Martin' AND last_name = 'Dimitrov' LIMIT 1),
-    (SELECT id FROM vehicles WHERE registration_number = 'CT9012EF'),
-    'Plovdiv',
+
+-- Cancelled trip
+INSERT INTO trips (
+    driver_id,
+    vehicle_id,
+    origin,
+    destination,
+    trip_date,
+    distance_km,
+    duration_minutes,
+    revenue,
+    fuel_cost,
+    other_costs,
+    status,
+    cancelled_at,
+    cancellation_note
+)
+VALUES (
+    3,
+    3,
     'Sofia',
-    '2026-09-15',
-    145,
-    100,
-    350,
-    62.10,
-    20,
-    'cancelled'
+    'Pleven',
+    CURRENT_DATE - INTERVAL '1 day',
+    165,
+    120,
+    240,
+    42,
+    15,
+    'cancelled',
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    'Customer cancelled the transport request'
 );
