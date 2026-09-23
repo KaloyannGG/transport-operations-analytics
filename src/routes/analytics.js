@@ -79,6 +79,17 @@ router.get("/drivers", async (req, res) => {
                 drivers.first_name,
                 drivers.last_name,
 
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM trips active_trip
+                        WHERE active_trip.driver_id = drivers.id
+                        AND active_trip.status = 'in_progress'
+                    )
+                    THEN 'On Trip'
+                    ELSE 'Available'
+                END AS availability,
+
                 COUNT(trips.id) AS total_trips,
 
                 COALESCE(
@@ -135,6 +146,17 @@ router.get("/vehicles", async (req, res) => {
                 vehicles.registration_number,
                 vehicles.make,
                 vehicles.model,
+
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM trips active_trip
+                        WHERE active_trip.vehicle_id = vehicles.id
+                        AND active_trip.status = 'in_progress'
+                    )
+                    THEN 'On Trip'
+                    ELSE 'Available'
+                END AS availability,
 
                 COUNT(trips.id) AS total_trips,
 

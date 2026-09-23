@@ -208,7 +208,9 @@ async function loadDrivers() {
                     ${escapeHtml(driver.first_name)}
                     ${escapeHtml(driver.last_name)}
                 </td>
-
+                <td>
+                    ${escapeHtml(driver.availability)}
+                </td>
                 <td>
                     ${Number(driver.total_trips)}
                 </td>
@@ -271,6 +273,9 @@ async function loadVehicles() {
                     -
                     ${escapeHtml(vehicle.make)}
                     ${escapeHtml(vehicle.model || "")}
+                </td>
+                <td>
+                    ${escapeHtml(vehicle.availability)}
                 </td>
 
                 <td>
@@ -940,7 +945,7 @@ function closeStatusModal(restoreStatus = true) {
         pendingStatusChange
             .selectElement
             .value =
-                pendingStatusChange.oldStatus;
+            pendingStatusChange.oldStatus;
     }
 
 
