@@ -11,6 +11,7 @@ function escapeHtml(value) {
 
 let loadedTrips = [];
 let currentTripStatusFilter = "active";
+let visibleTrips = [];
 
 // Converts minutes to something like 2h 15m.
 function formatDuration(value) {
@@ -314,7 +315,7 @@ function applyTripFilters() {
             );
         });
 
-
+    visibleTrips = filteredTrips;
     renderTrips(filteredTrips);
 }
 // Loads the main dashboard totals.
@@ -646,7 +647,172 @@ function renderTrips(trips) {
         table.appendChild(row);
     });
 }
+// Escapes a value before putting it in the CSV file.
+function csvValue(value) {
 
+    const text =
+        String(value ?? "");
+
+    return `"${text.replaceAll('"', '""')}"`;
+}
+
+
+// Exports the currently filtered trips to a CSV file.
+function exportTripsToCsv() {
+
+    if (visibleTrips.length === 0) {
+
+        alert("There are no trips to export.");
+
+        return;
+    }
+
+
+    const rows = [
+
+        [
+            "Date",
+            "Driver",
+            "Vehicle",
+            "Origin",
+            "Destination",
+            "Distance KM",
+            "Status",
+            "Estimated Time",
+            "Started At",
+            "Completed At",
+            "Actual Time",
+            "Cancelled At",
+            "Cancellation Note",
+            "Revenue EUR",
+            "Fuel Cost EUR",
+            "Other Costs EUR",
+            "Profit EUR"
+        ]
+
+    ];
+
+
+    visibleTrips.forEach(trip => {
+
+        const tripDate =
+            new Date(trip.trip_date)
+                .toLocaleDateString("en-GB");
+
+
+        rows.push([
+            tripDate,
+
+            `${trip.first_name} ${trip.last_name}`,
+
+            trip.registration_number,
+
+            trip.origin,
+
+            trip.destination,
+
+            Number(trip.distance_km).toFixed(0),
+
+            getStatusLabel(trip.status),
+
+            formatDuration(
+                trip.duration_minutes
+            ),
+
+            trip.started_at
+                ? formatDateTime(trip.started_at)
+                : "",
+
+            trip.completed_at
+                ? formatDateTime(trip.completed_at)
+                : "",
+
+            trip.actual_duration_minutes
+                ? formatDuration(
+                    trip.actual_duration_minutes
+                )
+                : "",
+
+            trip.cancelled_at
+                ? formatDateTime(trip.cancelled_at)
+                : "",
+
+            trip.cancellation_note || "",
+
+            Number(trip.revenue).toFixed(2),
+
+            Number(trip.fuel_cost).toFixed(2),
+
+            Number(trip.other_costs).toFixed(2),
+
+            Number(trip.profit).toFixed(2)
+        ]);
+    });
+
+
+    const csvContent =
+        rows
+            .map(row =>
+                row
+                    .map(csvValue)
+                    .join(";")
+            )
+            .join("\n");
+
+
+    // UTF-8 BOM helps Excel display text correctly.
+    const blob =
+        new Blob(
+            [
+                "\uFEFF",
+                csvContent
+            ],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    const now =
+        new Date();
+
+    const fileDate = [
+        now.getFullYear(),
+
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0"),
+
+        String(
+            now.getDate()
+        ).padStart(2, "0")
+    ].join("-");
+
+
+    link.href =
+        url;
+
+    link.download =
+        `trips-export-${fileDate}.csv`;
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(url);
+}
 // Loads drivers and vehicles for the Add Trip dropdowns.
 async function loadFormOptions() {
     try {
@@ -1570,5 +1736,16 @@ tripSearch.addEventListener(
     "input",
     applyTripFilters
 );
+const exportTripsCsv =
+    document.getElementById(
+        "exportTripsCsv"
+    );
+
+
+exportTripsCsv.addEventListener(
+    "click",
+    exportTripsToCsv
+);
+
 
 refreshDashboard();

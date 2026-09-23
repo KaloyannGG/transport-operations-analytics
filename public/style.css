@@ -447,3 +447,18 @@ button:disabled {
     min-width: 260px;
     flex: 1;
 }
+.export-btn {
+    min-height: 38px;
+    padding: 7px 14px;
+    border: 1px solid #222;
+    border-radius: 6px;
+    background: #222;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.export-btn:hover {
+    background: #444;
+}

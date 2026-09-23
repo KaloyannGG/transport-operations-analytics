@@ -256,78 +256,54 @@
 
       <div class="trip-filter-bar">
 
-  <div class="trip-tabs" id="tripStatusTabs">
+        <div class="trip-tabs" id="tripStatusTabs">
 
-    <button
-      type="button"
-      class="trip-tab active"
-      data-status="active"
-    >
-      Active
-    </button>
+          <button type="button" class="trip-tab active" data-status="active">
+            Active
+          </button>
 
-    <button
-      type="button"
-      class="trip-tab"
-      data-status="planned"
-    >
-      Planned
-    </button>
+          <button type="button" class="trip-tab" data-status="planned">
+            Planned
+          </button>
 
-    <button
-      type="button"
-      class="trip-tab"
-      data-status="in_progress"
-    >
-      In Progress
-    </button>
+          <button type="button" class="trip-tab" data-status="in_progress">
+            In Progress
+          </button>
 
-    <button
-      type="button"
-      class="trip-tab"
-      data-status="completed"
-    >
-      Completed
-    </button>
+          <button type="button" class="trip-tab" data-status="completed">
+            Completed
+          </button>
 
-    <button
-      type="button"
-      class="trip-tab"
-      data-status="cancelled"
-    >
-      Cancelled
-    </button>
+          <button type="button" class="trip-tab" data-status="cancelled">
+            Cancelled
+          </button>
 
-    <button
-      type="button"
-      class="trip-tab"
-      data-status="all"
-    >
-      All
-    </button>
+          <button type="button" class="trip-tab" data-status="all">
+            All
+          </button>
 
-  </div>
+        </div>
 
 
-  <div class="trip-filter-options">
+        <div class="trip-filter-options">
 
-    <select id="tripDriverFilter">
-      <option value="">All drivers</option>
-    </select>
+          <select id="tripDriverFilter">
+            <option value="">All drivers</option>
+          </select>
 
-    <select id="tripVehicleFilter">
-      <option value="">All vehicles</option>
-    </select>
+          <select id="tripVehicleFilter">
+            <option value="">All vehicles</option>
+          </select>
 
-    <input
-      type="text"
-      id="tripSearch"
-      placeholder="Search driver, vehicle or route..."
-    >
+          <input type="text" id="tripSearch" placeholder="Search driver, vehicle or route...">
+          
+          <button type="button" id="exportTripsCsv" class="export-btn">
+            Export CSV
+          </button>
 
-  </div>
+        </div>
 
-</div>
+      </div>
 
       <table>
         <thead>
