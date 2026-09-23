@@ -261,13 +261,10 @@
             <th>Driver</th>
             <th>Vehicle</th>
             <th>Route</th>
-            <th>KM</th>
             <th>Status</th>
-            <th>Timing</th>
             <th>Revenue</th>
-            <th>Fuel</th>
             <th>Profit</th>
-            <th></th>
+            <th>Actions</th>
           </tr>
         </thead>
 
@@ -312,6 +309,26 @@
 
         <button type="button" id="statusModalConfirm">
           Confirm
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="tripDetailsModal" class="modal" hidden>
+
+    <div class="modal-card trip-details-card">
+
+      <h3>Trip Details</h3>
+
+      <div id="tripDetailsContent"></div>
+
+      <div class="modal-actions">
+
+        <button type="button" id="closeTripDetails">
+          Close
         </button>
 
       </div>

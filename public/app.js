@@ -348,32 +348,48 @@ async function loadTrips() {
             const id =
                 Number(trip.id);
 
-            const terminalStatus =
-                trip.status === "completed" ||
-                trip.status === "cancelled";
 
-            const statusOptions =
-                getStatusOptions(trip.status)
-                    .map(status => `
-                        <option
-                            value="${status}"
-                            ${status === trip.status ? "selected" : ""}
-                        >
-                            ${getStatusLabel(status)}
-                        </option>
-                    `)
-                    .join("");
+            let statusActions = "";
 
 
-            const cancellationNote =
-                trip.status === "cancelled" &&
-                    trip.cancellation_note
-                    ? `
-                        <div class="trip-note">
-                            ${escapeHtml(trip.cancellation_note)}
-                        </div>
-                    `
-                    : "";
+            if (trip.status === "planned") {
+
+                statusActions = `
+                    <button
+                        class="action-btn start-action"
+                        onclick="requestTripStatusChange(${id}, 'in_progress')"
+                    >
+                        Start
+                    </button>
+
+                    <button
+                        class="action-btn danger-action"
+                        onclick="requestTripStatusChange(${id}, 'cancelled')"
+                    >
+                        Cancel
+                    </button>
+                `;
+            }
+
+
+            if (trip.status === "in_progress") {
+
+                statusActions = `
+                    <button
+                        class="action-btn"
+                        onclick="requestTripStatusChange(${id}, 'completed')"
+                    >
+                        Complete
+                    </button>
+
+                    <button
+                        class="action-btn danger-action"
+                        onclick="requestTripStatusChange(${id}, 'cancelled')"
+                    >
+                        Cancel
+                    </button>
+                `;
+            }
 
 
             const row =
@@ -401,25 +417,9 @@ async function loadTrips() {
                 </td>
 
                 <td>
-                    ${Number(trip.distance_km).toFixed(0)}
-                </td>
-
-                <td>
-
-                    <select
-                        class="trip-status ${trip.status}"
-                        onchange="requestTripStatusChange(${id}, this)"
-                        ${terminalStatus ? "disabled" : ""}
-                    >
-                        ${statusOptions}
-                    </select>
-
-                    ${cancellationNote}
-
-                </td>
-
-                <td class="trip-timing">
-                    ${getTripTiming(trip)}
+                    <span class="status-badge status-${trip.status}">
+                        ${escapeHtml(getStatusLabel(trip.status))}
+                    </span>
                 </td>
 
                 <td>
@@ -427,26 +427,36 @@ async function loadTrips() {
                 </td>
 
                 <td>
-                    €${Number(trip.fuel_cost).toFixed(2)}
-                </td>
-
-                <td>
                     €${Number(trip.profit).toFixed(2)}
                 </td>
 
                 <td>
-                    <button
-                        class="delete-btn"
-                        onclick="deleteTrip(${id})"
-                    >
-                        ×
-                    </button>
+                    <div class="trip-actions">
+
+                        ${statusActions}
+
+                        <button
+                            class="action-btn details-btn"
+                            onclick="showTripDetails(${id})"
+                        >
+                            Details
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteTrip(${id})"
+                        >
+                            ×
+                        </button>
+
+                    </div>
                 </td>
             `;
 
 
             table.appendChild(row);
         });
+
 
     } catch (error) {
 
@@ -843,7 +853,7 @@ let pendingStatusChange = null;
 
 
 // Opens the confirmation window before changing status.
-function requestTripStatusChange(id, selectElement) {
+function requestTripStatusChange(id, newStatus) {
 
     const trip =
         loadedTrips.find(
@@ -853,25 +863,13 @@ function requestTripStatusChange(id, selectElement) {
 
 
     if (!trip) {
-        selectElement.value = "planned";
-        return;
-    }
-
-
-    const newStatus =
-        selectElement.value;
-
-
-    if (newStatus === trip.status) {
         return;
     }
 
 
     pendingStatusChange = {
         trip,
-        newStatus,
-        oldStatus: trip.status,
-        selectElement
+        newStatus
     };
 
 
@@ -933,21 +931,8 @@ function requestTripStatusChange(id, selectElement) {
     statusModal.hidden = false;
 }
 
-
 // Closes the modal.
-// If the change was not saved, the old status is restored.
-function closeStatusModal(restoreStatus = true) {
-
-    if (
-        restoreStatus &&
-        pendingStatusChange
-    ) {
-        pendingStatusChange
-            .selectElement
-            .value =
-            pendingStatusChange.oldStatus;
-    }
-
+function closeStatusModal() {
 
     statusModal.hidden = true;
 
@@ -961,7 +946,7 @@ function closeStatusModal(restoreStatus = true) {
 statusModalBack.addEventListener(
     "click",
     () => {
-        closeStatusModal(true);
+        closeStatusModal();
     }
 );
 
@@ -1044,7 +1029,7 @@ statusModalConfirm.addEventListener(
             }
 
 
-            closeStatusModal(false);
+            closeStatusModal();
 
             await refreshDashboard();
 
@@ -1060,6 +1045,169 @@ statusModalConfirm.addEventListener(
 
             statusModalConfirm.disabled = false;
         }
+    }
+);
+const tripDetailsModal =
+    document.getElementById("tripDetailsModal");
+
+const tripDetailsContent =
+    document.getElementById("tripDetailsContent");
+
+const closeTripDetails =
+    document.getElementById("closeTripDetails");
+
+
+// Shows the full information for one trip.
+function showTripDetails(id) {
+
+    const trip =
+        loadedTrips.find(
+            trip =>
+                Number(trip.id) === Number(id)
+        );
+
+
+    if (!trip) {
+        return;
+    }
+
+
+    let timingDetails = `
+        <div>
+            <strong>Estimated time:</strong>
+            ${formatDuration(trip.duration_minutes)}
+        </div>
+    `;
+
+
+    if (trip.started_at) {
+
+        timingDetails += `
+            <div>
+                <strong>Started:</strong>
+                ${escapeHtml(formatDateTime(trip.started_at))}
+            </div>
+        `;
+    }
+
+
+    if (trip.completed_at) {
+
+        timingDetails += `
+            <div>
+                <strong>Completed:</strong>
+                ${escapeHtml(formatDateTime(trip.completed_at))}
+            </div>
+
+            <div>
+                <strong>Actual time:</strong>
+                ${formatDuration(trip.actual_duration_minutes)}
+            </div>
+        `;
+    }
+
+
+    if (trip.cancelled_at) {
+
+        timingDetails += `
+            <div>
+                <strong>Cancelled:</strong>
+                ${escapeHtml(formatDateTime(trip.cancelled_at))}
+            </div>
+        `;
+    }
+
+
+    let cancellationDetails = "";
+
+
+    if (
+        trip.status === "cancelled" &&
+        trip.cancellation_note
+    ) {
+
+        cancellationDetails = `
+            <div class="details-note">
+
+                <strong>Cancellation reason:</strong>
+
+                <p>
+                    ${escapeHtml(trip.cancellation_note)}
+                </p>
+
+            </div>
+        `;
+    }
+
+
+    tripDetailsContent.innerHTML = `
+
+        <div class="details-grid">
+
+            <div>
+                <strong>Driver:</strong>
+                ${escapeHtml(trip.first_name)}
+                ${escapeHtml(trip.last_name)}
+            </div>
+
+            <div>
+                <strong>Vehicle:</strong>
+                ${escapeHtml(trip.registration_number)}
+            </div>
+
+            <div>
+                <strong>Route:</strong>
+                ${escapeHtml(trip.origin)}
+                →
+                ${escapeHtml(trip.destination)}
+            </div>
+
+            <div>
+                <strong>Distance:</strong>
+                ${Number(trip.distance_km).toFixed(0)} km
+            </div>
+
+            <div>
+                <strong>Status:</strong>
+                ${escapeHtml(getStatusLabel(trip.status))}
+            </div>
+
+            ${timingDetails}
+
+            <div>
+                <strong>Revenue:</strong>
+                €${Number(trip.revenue).toFixed(2)}
+            </div>
+
+            <div>
+                <strong>Fuel cost:</strong>
+                €${Number(trip.fuel_cost).toFixed(2)}
+            </div>
+
+            <div>
+                <strong>Other costs:</strong>
+                €${Number(trip.other_costs).toFixed(2)}
+            </div>
+
+            <div>
+                <strong>Profit:</strong>
+                €${Number(trip.profit).toFixed(2)}
+            </div>
+
+        </div>
+
+        ${cancellationDetails}
+    `;
+
+
+    tripDetailsModal.hidden = false;
+}
+
+
+closeTripDetails.addEventListener(
+    "click",
+    () => {
+        tripDetailsModal.hidden = true;
     }
 );
 
