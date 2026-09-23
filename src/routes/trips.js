@@ -12,6 +12,8 @@ router.get("/", async (req, res) => {
         const result = await pool.query(`
             SELECT
                 trips.id,
+                trips.driver_id,
+                trips.vehicle_id,
                 trips.origin,
                 trips.destination,
                 trips.trip_date,
@@ -21,12 +23,30 @@ router.get("/", async (req, res) => {
                 trips.fuel_cost,
                 trips.other_costs,
                 trips.status,
+                trips.started_at,
+                trips.completed_at,
+                trips.cancelled_at,
+                trips.cancellation_note,
 
                 (
                     trips.revenue
                     - trips.fuel_cost
                     - trips.other_costs
                 ) AS profit,
+
+                CASE
+                    WHEN trips.started_at IS NOT NULL
+                    AND trips.completed_at IS NOT NULL
+                    THEN ROUND(
+                        EXTRACT(
+                            EPOCH FROM (
+                                trips.completed_at
+                                - trips.started_at
+                            )
+                        ) / 60
+                    )
+                    ELSE NULL
+                END AS actual_duration_minutes,
 
                 drivers.first_name,
                 drivers.last_name,
@@ -80,12 +100,6 @@ router.post("/", async (req, res) => {
         const revenueNumber = Number(revenue);
         const fuelPriceNumber = Number(fuel_price);
         const otherCostsNumber = Number(other_costs || 0);
-
-        const allowedStatuses = [
-            "planned",
-            "completed",
-            "cancelled"
-        ];
 
         const tripStatus =
             status || "planned";
@@ -146,9 +160,10 @@ router.post("/", async (req, res) => {
         }
 
 
-        if (!allowedStatuses.includes(tripStatus)) {
+        // every new trip starts as planned
+        if (tripStatus !== "planned") {
             return res.status(400).json({
-                error: "Invalid trip status"
+                error: "New trips must start as planned"
             });
         }
 
@@ -311,11 +326,14 @@ router.patch("/:id/status", async (req, res) => {
         const id =
             Number(req.params.id);
 
-        const { status } =
-            req.body;
+        const {
+            status,
+            cancellation_note
+        } = req.body;
 
         const allowedStatuses = [
             "planned",
+            "in_progress",
             "completed",
             "cancelled"
         ];
@@ -338,28 +356,199 @@ router.patch("/:id/status", async (req, res) => {
         }
 
 
-        const result = await pool.query(
+        // load current trip
+        const tripResult = await pool.query(
             `
-            UPDATE trips
-            SET status = $1
-            WHERE id = $2
-            RETURNING *
+            SELECT
+                id,
+                driver_id,
+                vehicle_id,
+                status
+            FROM trips
+            WHERE id = $1
             `,
-            [
-                status,
-                id
-            ]
+            [id]
         );
 
 
-        if (result.rows.length === 0) {
+        if (tripResult.rows.length === 0) {
             return res.status(404).json({
                 error: "Trip not found"
             });
         }
 
 
-        res.json(result.rows[0]);
+        const trip =
+            tripResult.rows[0];
+
+        const currentStatus =
+            trip.status;
+
+
+        // allowed status changes
+        const allowedTransitions = {
+            planned: [
+                "in_progress",
+                "cancelled"
+            ],
+
+            in_progress: [
+                "completed",
+                "cancelled"
+            ],
+
+            completed: [],
+            cancelled: []
+        };
+
+
+        if (
+            !allowedTransitions[currentStatus] ||
+            !allowedTransitions[currentStatus]
+                .includes(status)
+        ) {
+            return res.status(400).json({
+                error:
+                    `Cannot change trip from ${currentStatus} to ${status}`
+            });
+        }
+
+
+        // starting a trip
+        if (status === "in_progress") {
+
+            // check if driver is already on another trip
+            const driverTrip =
+                await pool.query(
+                    `
+                    SELECT id
+                    FROM trips
+                    WHERE driver_id = $1
+                    AND status = 'in_progress'
+                    AND id <> $2
+                    LIMIT 1
+                    `,
+                    [
+                        trip.driver_id,
+                        id
+                    ]
+                );
+
+
+            if (driverTrip.rows.length > 0) {
+                return res.status(409).json({
+                    error:
+                        "Driver is already assigned to an active trip"
+                });
+            }
+
+
+            // check if vehicle is already on another trip
+            const vehicleTrip =
+                await pool.query(
+                    `
+                    SELECT id
+                    FROM trips
+                    WHERE vehicle_id = $1
+                    AND status = 'in_progress'
+                    AND id <> $2
+                    LIMIT 1
+                    `,
+                    [
+                        trip.vehicle_id,
+                        id
+                    ]
+                );
+
+
+            if (vehicleTrip.rows.length > 0) {
+                return res.status(409).json({
+                    error:
+                        "Vehicle is already assigned to an active trip"
+                });
+            }
+
+
+            const result = await pool.query(
+                `
+                UPDATE trips
+                SET
+                    status = 'in_progress',
+                    started_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING *
+                `,
+                [id]
+            );
+
+
+            return res.json(
+                result.rows[0]
+            );
+        }
+
+
+        // completing a trip
+        if (status === "completed") {
+            const result = await pool.query(
+                `
+                UPDATE trips
+                SET
+                    status = 'completed',
+                    completed_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+                RETURNING *
+                `,
+                [id]
+            );
+
+
+            return res.json(
+                result.rows[0]
+            );
+        }
+
+
+        // cancelling a trip
+        if (status === "cancelled") {
+
+            if (
+                typeof cancellation_note !== "string" ||
+                cancellation_note.trim() === ""
+            ) {
+                return res.status(400).json({
+                    error:
+                        "Cancellation note is required"
+                });
+            }
+
+
+            const cleanCancellationNote =
+                cancellation_note.trim();
+
+
+            const result = await pool.query(
+                `
+                UPDATE trips
+                SET
+                    status = 'cancelled',
+                    cancelled_at = CURRENT_TIMESTAMP,
+                    cancellation_note = $1
+                WHERE id = $2
+                RETURNING *
+                `,
+                [
+                    cleanCancellationNote,
+                    id
+                ]
+            );
+
+
+            return res.json(
+                result.rows[0]
+            );
+        }
+
 
     } catch (error) {
         console.log(error);
@@ -388,21 +577,42 @@ router.delete("/:id", async (req, res) => {
         }
 
 
-        const result = await pool.query(
+        const tripResult = await pool.query(
             `
-            DELETE FROM trips
+            SELECT status
+            FROM trips
             WHERE id = $1
-            RETURNING *
             `,
             [id]
         );
 
 
-        if (result.rows.length === 0) {
+        if (tripResult.rows.length === 0) {
             return res.status(404).json({
                 error: "Trip not found"
             });
         }
+
+
+        // active trips should be completed or cancelled first
+        if (
+            tripResult.rows[0].status ===
+            "in_progress"
+        ) {
+            return res.status(409).json({
+                error:
+                    "An active trip cannot be deleted"
+            });
+        }
+
+
+        await pool.query(
+            `
+            DELETE FROM trips
+            WHERE id = $1
+            `,
+            [id]
+        );
 
 
         res.json({

@@ -37,6 +37,9 @@ CREATE TABLE trips (
     other_costs NUMERIC(12,2) DEFAULT 0,
 
     status VARCHAR(50) DEFAULT 'planned',
-
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    cancelled_at TIMESTAMP,\q
+    cancellation_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
